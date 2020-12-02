@@ -176,6 +176,9 @@ class InsightsQueryTest {
                     assertThat(find<ComboBoxFixture>(byXpath("//div[@class='ComboBox']")).selectedText()).isEqualTo("Hours")
                 }
             }
+            step("Open query from log group") {
+
+            }
         }
     }
 
@@ -197,7 +200,7 @@ class InsightsQueryTest {
     }
 
     private fun ContainerFixture.openInsightsQueryDialogFromResults() = step("Open query editor") {
-        findAndClick("//div[@text='Open Query Editor']")
+        findAndClick("//div[@accessiblename='Open Query Editor']")
     }
 
     private fun CloudWatchLogsClient.verifyDeletedLogGroup(logGroup: String) {
