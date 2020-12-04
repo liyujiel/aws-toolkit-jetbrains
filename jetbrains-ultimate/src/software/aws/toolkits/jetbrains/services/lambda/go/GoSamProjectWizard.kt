@@ -3,19 +3,11 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterField
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterManager
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRef
-import com.intellij.lang.javascript.dialects.JSLanguageLevel
-import com.intellij.lang.javascript.settings.JSRootConfiguration
-import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.roots.ModifiableRootModel
+import com.goide.sdk.combobox.GoSdkChooserCombo
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
-import software.aws.toolkits.jetbrains.services.lambda.nodejs.NodeJsSdkSelectionPanel
-import software.aws.toolkits.jetbrains.services.lambda.nodejs.SamHelloWorldNodeJs
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamAppTemplateBased
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
@@ -25,7 +17,7 @@ import software.aws.toolkits.resources.message
 import javax.swing.JComponent
 import javax.swing.JLabel
 
-class GoSamProjectWizard  : SamProjectWizard {
+class GoSamProjectWizard : SamProjectWizard {
     override fun createSdkSelectionPanel(projectLocation: TextFieldWithBrowseButton?): SdkSelector = GoSdkSelectionPanel()
 
     override fun listTemplates(): Collection<SamProjectTemplate> = listOf(
@@ -34,26 +26,14 @@ class GoSamProjectWizard  : SamProjectWizard {
 }
 
 class GoSdkSelectionPanel : SdkSelector {
-    private val interpreterPanel = createInterpreterField()
-
-    private fun createInterpreterField(): NodeJsInterpreterField {
-        val project = ProjectManager.getInstance().defaultProject
-        return object : NodeJsInterpreterField(project, false) {
-            override fun isDefaultProjectInterpreterField(): Boolean = true
-        }
-    }
+    private val interpreterPanel = GoSdkChooserCombo()
 
     override fun sdkSelectionLabel() = JLabel(message("sam.init.node_interpreter.label"))
 
     override fun sdkSelectionPanel(): JComponent = interpreterPanel
 
-    override fun applySdkSettings(model: ModifiableRootModel) {
-        NodeJsInterpreterManager.getInstance(model.project).setInterpreterRef(NodeJsInterpreterRef.create(interpreterPanel.interpreter))
-        JSRootConfiguration.getInstance(model.project).storeLanguageLevelAndUpdateCaches(JSLanguageLevel.ES6)
-    }
-
-    override fun validateSelection(): ValidationInfo? = interpreterPanel.interpreter?.validate(null)?.let {
-        interpreterPanel.validationInfo(it)
+    override fun validateSelection(): ValidationInfo? = interpreterPanel.validator.validate(interpreterPanel.sdk)?.let {
+        interpreterPanel.validationInfo(it.errorMessage)
     }
 }
 

@@ -3,7 +3,7 @@
 
 <idea-plugin>
     <extensions defaultExtensionNs="com.intellij">
-        <codeInsight.lineMarkerProvider language="JavaScript" implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
+        <codeInsight.lineMarkerProvider language="go" implementationClass="software.aws.toolkits.jetbrains.services.lambda.upload.LambdaLineMarker"/>
     </extensions>
 
     <extensions defaultExtensionNs="aws.toolkit.lambda">
@@ -12,9 +12,5 @@
         <handlerResolver id="GO" implementationClass="software.aws.toolkits.jetbrains.services.lambda.go.GoLambdaHandlerResolver"/>
         <sam.debugSupport id="GO" implementationClass="software.aws.toolkits.jetbrains.services.lambda.go.GoSamDebugSupport"/>
         <sam.projectWizard id="GO" implementationClass="software.aws.toolkits.jetbrains.services.lambda.go.GoSamProjectWizard"/>
-    </extensions>
-
-    <extensions defaultExtensionNs="aws.toolkit.clouddebug">
-        <debuggerSupport implementation="software.aws.toolkits.jetbrains.services.clouddebug.nodejs.NodeJsDebuggerSupport"/>
     </extensions>
 </idea-plugin>
