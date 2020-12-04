@@ -7,6 +7,11 @@
                 "Image"
             ],
             "description": "The Lambda Package type of the function"
+        },
+        {
+            "name": "insightsDialogOpenSource",
+            "allowedValues": ["explorer", "resultsWindow", "logGroup"],
+            "description": "Dialog open trigger source location"
         }
     ],
     "metrics": [
