@@ -22,7 +22,7 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
         GoFunctionIndex.find(handler, project, searchScope, GoIdFilter.getFilesFilter(searchScope)).filterIsInstance<NavigatablePsiElement>().toTypedArray()
 
     override fun determineHandler(element: PsiElement): String? {
-        // TODO
+        // TODO filter based on criteria
         //if (!element.isValidHandlerIdentifier()) {
         //    return null
         //}

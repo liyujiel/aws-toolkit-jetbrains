@@ -26,6 +26,7 @@ class GoSamProjectWizard : SamProjectWizard {
     )
 }
 
+// TODO add source roots on create
 class GoSdkSelectionPanel : SdkSelector {
     private val interpreterPanel = GoSdkChooserCombo()
 
