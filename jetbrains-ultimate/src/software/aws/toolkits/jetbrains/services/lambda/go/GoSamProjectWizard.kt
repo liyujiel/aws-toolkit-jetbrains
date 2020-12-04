@@ -4,6 +4,7 @@
 package software.aws.toolkits.jetbrains.services.lambda.go
 
 import com.goide.sdk.combobox.GoSdkChooserCombo
+import com.intellij.facet.ui.ValidationResult
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
 import software.amazon.awssdk.services.lambda.model.PackageType
@@ -28,11 +29,14 @@ class GoSamProjectWizard : SamProjectWizard {
 class GoSdkSelectionPanel : SdkSelector {
     private val interpreterPanel = GoSdkChooserCombo()
 
-    override fun sdkSelectionLabel() = JLabel(message("sam.init.node_interpreter.label"))
+    override fun sdkSelectionLabel() = JLabel(message("sam.init.go.sdk"))
 
     override fun sdkSelectionPanel(): JComponent = interpreterPanel
 
     override fun validateSelection(): ValidationInfo? = interpreterPanel.validator.validate(interpreterPanel.sdk)?.let {
+        if (it == ValidationResult.OK) {
+            return null
+        }
         interpreterPanel.validationInfo(it.errorMessage)
     }
 }

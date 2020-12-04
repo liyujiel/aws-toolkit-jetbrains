@@ -21,6 +21,6 @@ class GoLambdaBuilder : LambdaBuilder() {
             handlerElement.containingFile?.virtualFile
                 ?: throw IllegalArgumentException("Handler file must be backed by a VirtualFile")
         }
-        return Paths.get(ProjectFileIndex.getInstance(module.project).getContentRootForFile(handlerVirtualFile)!!.path)
+        return Paths.get(inferSourceRoot(module.project, handlerVirtualFile)!!.path)
     }
 }
