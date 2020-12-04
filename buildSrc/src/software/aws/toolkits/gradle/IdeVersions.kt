@@ -25,7 +25,8 @@ object IdeVersions {
                 "JavaScript",
                 "JavaScriptDebugger",
                 "com.intellij.database",
-                "Pythonid:201.6668.31"
+                "Pythonid:201.6668.31",
+                "org.jetbrains.plugins.go:201.6668.1.98"
             ),
             rdGenVersion = "0.203.161",
             nugetVersion = "2020.1.0"
@@ -43,7 +44,8 @@ object IdeVersions {
                 "JavaScript",
                 "JavaScriptDebugger",
                 "com.intellij.database",
-                "Pythonid:202.6397.98"
+                "Pythonid:202.6397.98",
+                "org.jetbrains.plugins.go:202.6397.20"
             ),
             rdGenVersion = "0.203.161",
             nugetVersion = "2020.2.0"
@@ -54,16 +56,16 @@ object IdeVersions {
                 "java",
                 "com.intellij.gradle",
                 "org.jetbrains.idea.maven",
-                "PythonCore:203.5784.10",
-                "Docker:203.5784.10"
+                "PythonCore:203.5981.155",
+                "Docker:203.5981.143"
             ),
             ultimatePlugins = listOf(
                 "JavaScript",
                 "JavaScriptDebugger",
                 "com.intellij.database",
-                "Pythonid:203.5784.10"
+                "Pythonid:203.5981.155",
+                "org.jetbrains.plugins.go:203.5981.114"
             ),
-            ijSdkOverride = "203.5784.10-EAP-SNAPSHOT",
             riderSdkOverride = "2020.3-SNAPSHOT",
             rdGenVersion = "0.203.161",
             nugetVersion = "2020.3.0-eap04"
