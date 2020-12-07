@@ -6,6 +6,7 @@ package software.aws.toolkits.jetbrains.services.lambda.go
 import com.goide.dlv.DlvDebugProcess
 import com.goide.dlv.DlvDisconnectOption
 import com.goide.dlv.DlvRemoteVmConnection
+import com.goide.execution.GoRunUtil.createDlvDebugProcess
 import com.goide.execution.GoRunUtil.localDlv
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcess
@@ -28,14 +29,12 @@ class GoSamDebugSupport : SamDebugSupport {
         override fun start(session: XDebugSession): XDebugProcess {
             val executionResult = state.execute(environment.executor, environment.runner)
 
-            val connection = DlvRemoteVmConnection(DlvDisconnectOption.KILL)
-            connection.address = InetSocketAddress(debugHost, debugPorts.first())
-
-            return DlvDebugProcess(
+            return createDlvDebugProcess(
                 session,
-                connection,
                 executionResult,
-                true
+                InetSocketAddress(debugHost, debugPorts.first()),
+                true,
+                DlvDisconnectOption.DETACH
             )
         }
     }
@@ -50,7 +49,7 @@ class GoSamDebugSupport : SamDebugSupport {
                 "/var/runtime/aws-lambda-go delveAPI -delveAPI=2 -delvePort=${debugPorts.first()} -delvePath=/tmp/lambci_debug_files/dlv"
             )
         } else {
-            add(""""-delveAPI=2"""")
+            add("\"-delveAPI=2\"")
         }
     }
 }
