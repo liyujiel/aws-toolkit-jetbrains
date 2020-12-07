@@ -40,8 +40,11 @@ class GoSamDebugSupport : SamDebugSupport {
     }
 
     override fun samArguments(runtime: Runtime, packageType: PackageType, debugPorts: List<Int>): List<String> = buildList {
+        // TODO delve ships with the IDE, but it is not marked executable. The first time the IDE runs it, Delve is set executable
+        // At that point. Since we don't know if it's executable or not, set it so the user can execute it.
+        localDlv().parentFile.parentFile.resolve("linux").resolve("dlv").setExecutable(true, true)
         add("--debugger-path")
-        // TODO fix
+        // TODO fix how we resolve this
         add(localDlv().parentFile.parentFile.resolve("linux").absolutePath)
         add("--debug-args")
         if (packageType == PackageType.IMAGE) {
@@ -49,7 +52,7 @@ class GoSamDebugSupport : SamDebugSupport {
                 "/var/runtime/aws-lambda-go delveAPI -delveAPI=2 -delvePort=${debugPorts.first()} -delvePath=/tmp/lambci_debug_files/dlv"
             )
         } else {
-            add("\"-delveAPI=2\"")
+            add("-delveAPI=2")
         }
     }
 }
