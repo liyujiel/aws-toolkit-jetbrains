@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.go
 
 import com.goide.psi.GoFunctionDeclaration
 import com.goide.psi.GoTokenType
+import com.goide.psi.impl.GoLightType
 import com.goide.psi.impl.GoPsiUtil
 import com.goide.stubs.index.GoFunctionIndex
 import com.goide.stubs.index.GoIdFilter
@@ -60,8 +61,15 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
         if (params.size == 2) {
             params.first()
         }
-        // this.signature.parameters
-        // this.signature.result
+        // 0, 1, or 2 returned values. 0 is a bit strange for PSI, we can only check by text
+        if (signature?.resultType?.text != GoLightType.LightVoidType.TYPE_TEXT) {
+            // 1
+            when (signature?.resultType) {
+                //is
+            }
+            // 2
+
+        }
         return true
     }
 }
