@@ -3,13 +3,19 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
+import com.goide.sdk.GoSdkService
 import com.goide.sdk.combobox.GoSdkChooserCombo
+import com.goide.vgo.configuration.VgoProjectSettings
 import com.intellij.facet.ui.ValidationResult
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.roots.ModifiableRootModel
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.openapi.vfs.VirtualFile
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamAppTemplateBased
+import software.aws.toolkits.jetbrains.services.lambda.wizard.SamNewProjectSettings
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectTemplate
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SamProjectWizard
 import software.aws.toolkits.jetbrains.services.lambda.wizard.SdkSelector
@@ -40,9 +46,19 @@ class GoSdkSelectionPanel : SdkSelector {
         }
         interpreterPanel.validationInfo(it.errorMessage)
     }
+
+    override fun applySdkSettings(model: ModifiableRootModel) {
+        GoSdkService.getInstance(model.project).setSdk(interpreterPanel.sdk)
+    }
 }
 
 class SamHelloWorldGo : SamAppTemplateBased() {
+    override fun postCreationAction(settings: SamNewProjectSettings, contentRoot: VirtualFile, rootModel: ModifiableRootModel, indicator: ProgressIndicator) {
+        // Turn on vgo integration, required for it to resolve dependencies properly
+        VgoProjectSettings.getInstance(rootModel.project).isIntegrationEnabled = true
+        super.postCreationAction(settings, contentRoot, rootModel, indicator)
+    }
+
     override fun displayName() = message("sam.init.template.hello_world.name")
 
     override fun description() = message("sam.init.template.hello_world.description")
