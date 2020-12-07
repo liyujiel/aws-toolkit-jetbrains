@@ -3,6 +3,9 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
+import com.goide.psi.GoFunctionDeclaration
+import com.goide.psi.GoTokenType
+import com.goide.psi.impl.GoPsiUtil
 import com.goide.stubs.index.GoFunctionIndex
 import com.goide.stubs.index.GoIdFilter
 import com.intellij.openapi.project.Project
@@ -11,7 +14,10 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
+import com.intellij.psi.impl.source.tree.CompositeElement
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.elementType
+import com.jetbrains.python.PyTokenTypes
 import software.aws.toolkits.jetbrains.services.lambda.LambdaHandlerResolver
 
 class GoLambdaHandlerResolver : LambdaHandlerResolver {
@@ -22,21 +28,29 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
         GoFunctionIndex.find(handler, project, searchScope, GoIdFilter.getFilesFilter(searchScope)).filterIsInstance<NavigatablePsiElement>().toTypedArray()
 
     override fun determineHandler(element: PsiElement): String? {
-        // TODO filter based on criteria
-        //if (!element.isValidHandlerIdentifier()) {
-        //    return null
-        //}
+        // Go PSI is different, go function declarations are not leaf's like in some other
+        // languages, they are CompositeElements
+        val parent = element.parent
+        if(parent !is GoFunctionDeclaration) {
+            return null
+        }
 
-        val virtualFile = element.containingFile.virtualFile ?: return null
+        // make sure it's a top level function
+        if(!GoPsiUtil.isTopLevelDeclaration(parent)) {
+            return null
+        }
 
-      //  val sourceRoot = inferSourceRoot(element.project, virtualFile) ?: return null
-      //  val relativePath = VfsUtilCore.findRelativePath(sourceRoot, virtualFile, '/') ?: return null
-        //val prefix = FileUtilRt.getNameWithoutExtension(relativePath)
-        val handlerName = element.text
+        if (!parent.isValidHandlerIdentifier()) {
+            return null
+        }
 
-        return handlerName
-        //return "$prefix.$handlerName"
+        return parent.name
     }
 
     override fun determineHandlers(element: PsiElement, file: VirtualFile): Set<String> = determineHandler(element)?.let { setOf(it) }.orEmpty()
+
+    // see https://docs.aws.amazon.com/lambda/latest/dg/golang-handler.html for what is valid
+    private fun GoFunctionDeclaration.isValidHandlerIdentifier(): Boolean {
+        return true
+    }
 }

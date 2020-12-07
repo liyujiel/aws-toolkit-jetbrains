@@ -7,7 +7,9 @@ import com.goide.dlv.DlvDebugProcess
 import com.goide.dlv.DlvDisconnectOption
 import com.goide.dlv.DlvRemoteVmConnection
 import com.goide.execution.GoRunUtil.createDlvDebugProcess
+import com.goide.execution.GoRunUtil.getBundledDlv
 import com.goide.execution.GoRunUtil.localDlv
+import com.goide.util.GoLocalEnvironmentFactory
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
@@ -40,12 +42,15 @@ class GoSamDebugSupport : SamDebugSupport {
     }
 
     override fun samArguments(runtime: Runtime, packageType: PackageType, debugPorts: List<Int>): List<String> = buildList {
-        // TODO delve ships with the IDE, but it is not marked executable. The first time the IDE runs it, Delve is set executable
-        // At that point. Since we don't know if it's executable or not, set it so the user can execute it.
-        localDlv().parentFile.parentFile.resolve("linux").resolve("dlv").setExecutable(true, true)
+        // This can take a target platform, but then it pulls directly from GOOS, so we have to walk back up the file tree
+        // either way. Goland comes with mac/window/linux dlv since it supports remote debugging, so it is always safe to
+        // pull the linux one
+        val dlvFolder = getBundledDlv(null)!!.parentFile.parentFile.resolve("linux")
+        // Delve ships with the IDE, but it is not marked executable. The first time the IDE runs it, Delve is set executable
+        // At that point. Since we don't know if it's executable or not, we have to set it manually. TODO Is there a better way?
+        dlvFolder.resolve("dlv").setExecutable(true, true)
         add("--debugger-path")
-        // TODO fix how we resolve this
-        add(localDlv().parentFile.parentFile.resolve("linux").absolutePath)
+        add(dlvFolder.absolutePath)
         add("--debug-args")
         if (packageType == PackageType.IMAGE) {
             add(
