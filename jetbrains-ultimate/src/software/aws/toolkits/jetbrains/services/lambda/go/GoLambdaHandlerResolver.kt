@@ -51,6 +51,17 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
 
     // see https://docs.aws.amazon.com/lambda/latest/dg/golang-handler.html for what is valid
     private fun GoFunctionDeclaration.isValidHandlerIdentifier(): Boolean {
+        val params = signature?.parameters?.parameterDeclarationList ?: listOf()
+        // 0, 1 or 2 parameters
+        if(params.size > 2) {
+            return false
+        }
+        // if 2 parameters, first must be context.Context
+        if (params.size == 2) {
+            params.first()
+        }
+        // this.signature.parameters
+        // this.signature.result
         return true
     }
 }
