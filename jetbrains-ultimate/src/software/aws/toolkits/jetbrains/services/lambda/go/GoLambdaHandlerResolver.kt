@@ -8,6 +8,7 @@ import com.goide.psi.GoTokenType
 import com.goide.psi.GoType
 import com.goide.psi.GoTypeList
 import com.goide.psi.impl.GoPsiUtil
+import com.goide.psi.impl.GoTypeUtil
 import com.goide.stubs.index.GoFunctionIndex
 import com.goide.stubs.index.GoIdFilter
 import com.intellij.openapi.project.Project
@@ -63,20 +64,19 @@ class GoLambdaHandlerResolver : LambdaHandlerResolver {
             return false
         }
 
-        // if 2 parameters, first must be context.Context TODO expand this
-        if (params.size == 2 && params.first().type?.text != "context.Context") {
+        // if 2 parameters, first must be context.Context
+        if (params.size == 2 && params.first().type?.textMatches("context.Context") != true) {
             return false
         }
 
         val returnType = signature?.resultType
         // 0, 1, or 2 returned values. 0 is always valid so check 1 and 2
-        // TODO expand return types
         if (returnType is GoTypeList) {
             val types = returnType.typeList
-            if ((types.size > 2) || (types.size == 2 && types[1].text != "error")) {
+            if ((types.size > 2) || (types.size == 2 && !GoTypeUtil.isError(types[1], types[1].context))) {
                 return false
             }
-        } else if (returnType is GoType && returnType.text != "error") {
+        } else if (returnType is GoType && !GoTypeUtil.isError(returnType, returnType.context)) {
             return false
         }
         return true

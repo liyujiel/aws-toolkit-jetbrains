@@ -26,4 +26,3 @@ private fun findChildGoMod(file: VirtualFile, contentRoot: VirtualFile): Virtual
         file == contentRoot -> file
         else -> findChildGoMod(file.parent, contentRoot)
     }
-

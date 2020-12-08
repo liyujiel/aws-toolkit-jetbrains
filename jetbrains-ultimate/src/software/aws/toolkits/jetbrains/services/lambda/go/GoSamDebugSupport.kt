@@ -3,22 +3,30 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
-import com.goide.dlv.DlvDebugProcess
 import com.goide.dlv.DlvDisconnectOption
-import com.goide.dlv.DlvRemoteVmConnection
 import com.goide.execution.GoRunUtil.createDlvDebugProcess
 import com.goide.execution.GoRunUtil.getBundledDlv
-import com.goide.execution.GoRunUtil.localDlv
-import com.goide.util.GoLocalEnvironmentFactory
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.openapi.application.ExpirableExecutor
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.impl.coroutineDispatchingContext
+import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
 import com.intellij.xdebugger.XDebugSession
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.jetbrains.concurrency.AsyncPromise
+import org.jetbrains.concurrency.Promise
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.utils.buildList
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamDebugSupport
 import software.aws.toolkits.jetbrains.services.lambda.execution.sam.SamRunningState
+import software.aws.toolkits.jetbrains.utils.ApplicationThreadPoolScope
+import software.aws.toolkits.jetbrains.utils.getCoroutineUiContext
 import java.net.InetSocketAddress
 
 class GoSamDebugSupport : SamDebugSupport {
@@ -27,25 +35,51 @@ class GoSamDebugSupport : SamDebugSupport {
         state: SamRunningState,
         debugHost: String,
         debugPorts: List<Int>
-    ): XDebugProcessStarter = object : XDebugProcessStarter() {
-        override fun start(session: XDebugSession): XDebugProcess {
-            val executionResult = state.execute(environment.executor, environment.runner)
+    ): XDebugProcessStarter? {
+        throw UnsupportedOperationException("Use 'createDebugProcessAsync' instead")
+    }
 
-            return createDlvDebugProcess(
-                session,
-                executionResult,
-                InetSocketAddress(debugHost, debugPorts.first()),
-                true,
-                DlvDisconnectOption.DETACH
-            )
+    override fun createDebugProcessAsync(
+        environment: ExecutionEnvironment,
+        state: SamRunningState,
+        debugHost: String,
+        debugPorts: List<Int>
+    ): Promise<XDebugProcessStarter?> {
+        val promise = AsyncPromise<XDebugProcessStarter?>()
+        val bgContext = ExpirableExecutor.on(AppExecutorUtil.getAppExecutorService()).expireWith(environment).coroutineDispatchingContext()
+        val edtContext = getCoroutineUiContext(ModalityState.any(), environment)
+
+        ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
+            try {
+                val executionResult = state.execute(environment.executor, environment.runner)
+
+                withContext(edtContext) {
+                    val starter = object : XDebugProcessStarter() {
+                        override fun start(session: XDebugSession): XDebugProcess = createDlvDebugProcess(
+                            session,
+                            executionResult,
+                            InetSocketAddress(debugHost, debugPorts.first()),
+                            true,
+                            DlvDisconnectOption.LEAVE_RUNNING
+                        )
+                    }
+                    promise.setResult(starter)
+                }
+            } catch (t: Throwable) {
+                LOG.warn(t) { "Failed to start debugger" }
+                promise.setError(t)
+            }
         }
+
+        return promise
     }
 
     override fun samArguments(runtime: Runtime, packageType: PackageType, debugPorts: List<Int>): List<String> = buildList {
-        // This can take a target platform, but then it pulls directly from GOOS, so we have to walk back up the file tree
+        // This can take a target platform, but that pulls directly from GOOS, so we have to walk back up the file tree
         // either way. Goland comes with mac/window/linux dlv since it supports remote debugging, so it is always safe to
         // pull the linux one
-        val dlvFolder = getBundledDlv(null)!!.parentFile.parentFile.resolve("linux")
+        val dlvFolder = getBundledDlv(null)?.parentFile?.parentFile?.resolve("linux")
+            ?: throw IllegalStateException("Packaged Devle debugger is not found!")
         // Delve ships with the IDE, but it is not marked executable. The first time the IDE runs it, Delve is set executable
         // At that point. Since we don't know if it's executable or not, we have to set it manually. TODO Is there a better way?
         dlvFolder.resolve("dlv").setExecutable(true, true)
@@ -59,5 +93,9 @@ class GoSamDebugSupport : SamDebugSupport {
         } else {
             add("-delveAPI=2")
         }
+    }
+
+    private companion object {
+        val LOG = getLogger<GoSamDebugSupport>()
     }
 }
