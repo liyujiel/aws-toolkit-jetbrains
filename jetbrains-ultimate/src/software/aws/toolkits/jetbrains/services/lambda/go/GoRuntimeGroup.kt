@@ -24,7 +24,7 @@ class GoRuntimeGroup : SdkBasedRuntimeGroup() {
         if (sdk.sdkType !is GoSdkType) {
             return null
         }
-        return if (GoSdkUtil.compareVersions("2.0.0", sdk.versionString) > 0) {
+        return if (GoSdkUtil.compareVersions(sdk.versionString, "2.0.0") < 0) {
             Runtime.GO1_X
         } else {
             null

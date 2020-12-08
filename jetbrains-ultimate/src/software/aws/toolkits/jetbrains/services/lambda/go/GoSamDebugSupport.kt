@@ -4,16 +4,14 @@
 package software.aws.toolkits.jetbrains.services.lambda.go
 
 import com.goide.dlv.DlvDisconnectOption
-import com.goide.execution.GoRunUtil.createDlvDebugProcess
+import com.goide.execution.GoRunUtil.createDelveXDebugStarter
 import com.goide.execution.GoRunUtil.getBundledDlv
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.util.concurrency.AppExecutorUtil
-import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
-import com.intellij.xdebugger.XDebugSession
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
@@ -52,18 +50,15 @@ class GoSamDebugSupport : SamDebugSupport {
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
                 val executionResult = state.execute(environment.executor, environment.runner)
+                val xDebugStarter = createDelveXDebugStarter(
+                    InetSocketAddress(debugHost, debugPorts.first()),
+                    executionResult,
+                    DlvDisconnectOption.KILL,
+                    true
+                )
 
                 withContext(edtContext) {
-                    val starter = object : XDebugProcessStarter() {
-                        override fun start(session: XDebugSession): XDebugProcess = createDlvDebugProcess(
-                            session,
-                            executionResult,
-                            InetSocketAddress(debugHost, debugPorts.first()),
-                            true,
-                            DlvDisconnectOption.LEAVE_RUNNING
-                        )
-                    }
-                    promise.setResult(starter)
+                    promise.setResult(xDebugStarter)
                 }
             } catch (t: Throwable) {
                 LOG.warn(t) { "Failed to start debugger" }

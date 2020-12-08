@@ -6,12 +6,15 @@ package software.aws.toolkits.jetbrains.utils.rules
 import com.goide.sdk.GoSdkService
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.TestModeFlags
+import com.intellij.testFramework.runInEdtAndWait
 
 class GoCodeInsightTestFixtureRule : CodeInsightTestFixtureRule()
 
 fun Project.setGoSdkVersion(version: String) {
     TestModeFlags.set(GoSdkService.TESTING_SDK_VERSION, version)
-    GoSdkService.getInstance(this).apply {
-        setSdk(getSdk(null))
+    runInEdtAndWait {
+        GoSdkService.getInstance(this).apply {
+            setSdk(getSdk(null))
+        }
     }
 }

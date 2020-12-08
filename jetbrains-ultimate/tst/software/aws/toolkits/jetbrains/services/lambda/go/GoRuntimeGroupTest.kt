@@ -3,7 +3,7 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
-import org.assertj.core.api.Assertions
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.Rule
 import org.junit.Test
 import software.amazon.awssdk.services.lambda.model.Runtime
@@ -21,13 +21,13 @@ class GoRuntimeGroupTest {
     fun testRuntime1x() {
         projectRule.project.setGoSdkVersion("1.0.0")
         val runtime = sut.determineRuntime(projectRule.project)
-        Assertions.assertThat(runtime).isEqualTo(Runtime.GO1_X)
+        assertThat(runtime).isEqualTo(Runtime.GO1_X)
     }
 
     @Test
     fun testRuntime2x() {
         projectRule.project.setGoSdkVersion("2.0.0")
         val runtime = sut.determineRuntime(projectRule.project)
-        Assertions.assertThat(runtime).isEqualTo(null)
+        assertThat(runtime).isEqualTo(null)
     }
 }
