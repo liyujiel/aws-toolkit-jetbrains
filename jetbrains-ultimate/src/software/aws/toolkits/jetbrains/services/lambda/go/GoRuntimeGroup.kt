@@ -5,6 +5,7 @@ package software.aws.toolkits.jetbrains.services.lambda.go
 
 import com.goide.GoLanguage
 import com.goide.sdk.GoSdkType
+import com.goide.sdk.GoSdkUtil
 import com.intellij.openapi.projectRoots.Sdk
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.jetbrains.services.lambda.BuiltInRuntimeGroups
@@ -20,9 +21,13 @@ class GoRuntimeGroup : SdkBasedRuntimeGroup() {
     )
 
     override fun runtimeForSdk(sdk: Sdk): Runtime? {
-        if (sdk.sdkType is GoSdkType) {
-            return Runtime.GO1_X
+        if (sdk.sdkType !is GoSdkType) {
+            return null
         }
-        return null
+        return if (GoSdkUtil.compareVersions("2.0.0", sdk.versionString) > 0) {
+            Runtime.GO1_X
+        } else {
+            null
+        }
     }
 }
