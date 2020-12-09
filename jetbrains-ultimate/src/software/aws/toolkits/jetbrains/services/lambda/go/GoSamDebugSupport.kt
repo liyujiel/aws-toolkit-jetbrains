@@ -3,19 +3,27 @@
 
 package software.aws.toolkits.jetbrains.services.lambda.go
 
+import com.goide.dlv.DlvDebugProcess
 import com.goide.dlv.DlvDisconnectOption
-import com.goide.execution.GoRunUtil.createDelveXDebugStarter
+import com.goide.dlv.DlvRemoteVmConnection
 import com.goide.execution.GoRunUtil.getBundledDlv
+import com.intellij.execution.process.ProcessAdapter
+import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.runners.ExecutionEnvironment
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.impl.coroutineDispatchingContext
 import com.intellij.util.concurrency.AppExecutorUtil
+import com.intellij.util.io.connectRetrying
+import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugProcessStarter
+import com.intellij.xdebugger.XDebugSession
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.Promise
+import org.jetbrains.ide.BuiltInServerManager
 import software.amazon.awssdk.services.lambda.model.PackageType
 import software.amazon.awssdk.services.lambda.model.Runtime
 import software.aws.toolkits.core.utils.getLogger
@@ -50,15 +58,35 @@ class GoSamDebugSupport : SamDebugSupport {
         ApplicationThreadPoolScope(environment.runProfile.name).launch(bgContext) {
             try {
                 val executionResult = state.execute(environment.executor, environment.runner)
-                val xDebugStarter = createDelveXDebugStarter(
-                    InetSocketAddress(debugHost, debugPorts.first()),
-                    executionResult,
-                    DlvDisconnectOption.KILL,
-                    true
-                )
 
                 withContext(edtContext) {
-                    promise.setResult(xDebugStarter)
+                    promise.setResult(
+                        object : XDebugProcessStarter() {
+                            override fun start(session: XDebugSession): XDebugProcess {
+                                val process = DlvDebugProcess(session, DlvRemoteVmConnection(DlvDisconnectOption.DETACH), executionResult, true)
+
+                                val processHandler = executionResult.processHandler
+                                val socketAddress = InetSocketAddress(debugHost, debugPorts.first())
+
+                                if (processHandler == null || processHandler.isStartNotified) {
+                                    process.connect(socketAddress)
+                                } else {
+                                    processHandler.addProcessListener(
+                                        object : ProcessAdapter() {
+                                            override fun startNotified(event: ProcessEvent) {
+                                                // TODO if we don't wait, it sometimes connects to the
+                                                // container before the debugger starts which then breaks
+                                                // TODO what else can we do?
+                                                Thread.sleep(10000)
+                                                process.connect(socketAddress)
+                                            }
+                                        }
+                                    )
+                                }
+                                return process
+                            }
+                        }
+                    )
                 }
             } catch (t: Throwable) {
                 LOG.warn(t) { "Failed to start debugger" }
