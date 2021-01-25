@@ -18,13 +18,23 @@ phases:
       dotnet: 3.1
 
     commands:
-      # Added for Python2 for Ubuntu 20.4
-      - add-apt-repository universe
       - apt-get update
-      - apt-get install -y jq python2.7 python3.6 python3.7 python3.8 python3-pip python3-distutils
+      # Install dotnet versions
+      - wget -nv -O dotnet-install.sh https://dot.net/v1/dotnet-install.sh && chmod +x dotnet-install.sh
+      - ./dotnet-install.sh -v 2.1.812
+      - dotnet --list-sdks
+      # Install python versions Needs to be installed with pyenv or else it will be ignored in 2020.4
+      - pyenv install --skip-existing 2.7.17
+      - pyenv install --skip-existing 3.6.9
+      - pyenv install --skip-existing 3.7.5
+      - pyenv install --skip-existing 3.8.7
+      - pyenv global 2.7.17 3.6.9 3.7.5 3.8.7
+      # Install pip
+      - apt-get install -y jq python3-pip python3-distutils
       # As of Ubuntu 20.4, there is no longer pip for Python 2, so we need to install it manually
       - curl https://bootstrap.pypa.io/2.7/get-pip.py --output get-pip.py
       - python2 get-pip.py
+      # Set up credentials
       - aws sts assume-role --role-arn $ASSUME_ROLE_ARN --role-session-name integ-test > creds.json
       - export KEY_ID=`jq -r '.Credentials.AccessKeyId' creds.json`
       - export SECRET=`jq -r '.Credentials.SecretAccessKey' creds.json`
